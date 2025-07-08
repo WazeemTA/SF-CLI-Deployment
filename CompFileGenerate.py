@@ -1,6 +1,16 @@
 import os
 import subprocess
 
+# Hardcoded values for easier modification
+DEFAULT_BASE_BRANCH = "origin/Phase-1"
+
+# Function to get user input
+def get_user_input(prompt, default_value):
+
+    user_input = input(f"{prompt} (Press Enter to use '{default_value}'): ")
+
+    return user_input.strip() if user_input else default_value
+
 # Function to get the current branch name
 def get_current_branch():
     try:
@@ -49,13 +59,8 @@ def apply_stash():
 def save_components_to_file(branch, components):
     try:
         # Prompt the user for a custom file name
-        custom_name = input("Do you want to provide a custom name for the CompFile? (y/n): ").strip().lower()
-        
-        if custom_name == "y":
-            file_suffix = input("Enter the custom name: ").strip()
-            file_name = f"{file_suffix}CompFile.txt"
-        else:
-            file_name = f"{branch}CompFile.txt"
+        file_suffix = get_user_input("Enter the custom name Suffix for the CompFile", branch)
+        file_name = f"{file_suffix}CompFile.txt"
 
         # Construct the directory path: current_directory/manifest/<branch_name>
         directory_path = os.path.join(os.getcwd(), "manifest", branch)
@@ -74,10 +79,10 @@ def save_components_to_file(branch, components):
         print(f"Error saving components to file: {e}")
 
 # Function to get the files committed to the current branch
-def get_committed_files(branch):
+def get_committed_files(base_branch, branch):
     try:
         committed_files = subprocess.run(
-            ["git", "diff", "--name-only", "--oneline", f"origin/sflc-release1..{branch}"],
+            ["git", "diff", "--name-only", "--oneline", f"{base_branch}..{branch}"],
             capture_output=True, text=True, check=True
         ).stdout.strip().splitlines()
 
@@ -89,22 +94,12 @@ def get_committed_files(branch):
 
 # Main script
 if __name__ == "__main__":
-    # Ask if the user wants to provide the branch name
-    use_provided_branch = input("Do you want to provide the name for the branch? (y/n): ").strip().lower()
+    # Ask if the user wants to provide the Base branch name
+    base_branch = get_user_input("Enter the base branch", DEFAULT_BASE_BRANCH)
+    print(f"Base branch selected: {base_branch}")
 
-    if use_provided_branch == "y":
-        # Request user input for the branch name
-        branch = input("Enter the branch name: ").strip()
-    elif use_provided_branch == "n":
-        # Use the current branch name
-        branch = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, check=True
-        ).stdout.strip()
-        print(f"Using current branch: {branch}")
-    else:
-        print("Invalid input. Please enter 'y' or 'n'.")
-        exit(1)
+    # Ask if the user wants to provide the branch name
+    branch = get_user_input("Enter the branch name", get_current_branch())
 
     # Confirm the branch name
     print(f"Branch selected: {branch}")
@@ -118,7 +113,7 @@ if __name__ == "__main__":
         exit(1)
 
     # Get the files committed to the current branch
-    committed_files = get_committed_files(branch)
+    committed_files = get_committed_files(base_branch, branch)
 
     if committed_files:
         print(f"Retrieved {len(committed_files)} files committed to the branch.")

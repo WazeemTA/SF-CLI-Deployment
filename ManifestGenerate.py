@@ -41,7 +41,7 @@ metadata_map = {
 
     # Automation and Business Processes
     ".approvalProcess-meta.xml": "ApprovalProcess",
-    ".workflow-meta.xml": "WorkflowRule",
+    ".workflow-meta.xml": "Workflow",
     ".emailAlert-meta.xml": "EmailAlert",
     ".processBuilder-meta.xml": "ProcessBuilder",
     ".assignmentRules-meta.xml": "AssignmentRules",
@@ -88,8 +88,18 @@ metadata_map = {
     ".globalValueSet-meta.xml": "GlobalValueSet",
     ".translation-meta.xml": "Translations",
     ".homePageLayout-meta.xml": "HomePageLayout",
+    ".group-meta.xml": "Group",
     ".batchCalcJobDefinition-meta.xml": "BatchCalcJobDefinition"
 }
+
+
+# Function to get user input
+
+def get_user_input(prompt, default_value):
+
+    user_input = input(f"{prompt} (Press Enter to use '{default_value}'): ")
+
+    return user_input.strip() if user_input else default_value
 
 # Function to get the current branch name
 
@@ -145,7 +155,7 @@ def generate_manifest(metadata_dict, output_dir, manifest_name):
     for metadata_type, components in metadata_dict.items():
         for item in components:
             item = item.strip().rstrip("\\")  # Remove unwanted trailing slashes
-            metadata_flags.append(f'--metadata \"{metadata_type}:{item}\"')
+            metadata_flags.append(f"--metadata '{metadata_type}:{item}'")
 
     command = [
         "powershell", "-Command",
@@ -165,14 +175,11 @@ if __name__ == "__main__":
     print(f"Using current branch: {current_branch}")
 
     # Prompt the user for the component file name
-    custom_file_name = input("Do you want to provide a custom component file name? (y/n): ").strip().lower()
-    if custom_file_name == "y":
-        file_base_name = input("Enter the custom base name for the component file & Manifest File: ").strip()
-        comp_file_name = f"{file_base_name}CompFile.txt"
-        manifest_name = f"{file_base_name}Manifest"
-    else:
-        comp_file_name = f"{current_branch}CompFile.txt"
-        manifest_name = f"{current_branch}Manifest"
+    file_base_name = get_user_input(
+        "Enter the base name for the component file & Manifest File", current_branch
+    )
+    comp_file_name = f"{file_base_name}CompFile.txt"
+    manifest_name = f"{file_base_name}Manifest"
 
     # Construct the file path to the component list file
     file_list_path = os.path.join("manifest", current_branch, comp_file_name)
